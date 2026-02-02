@@ -53,5 +53,62 @@ class ShopperModel:
             plt.show()
         else:
             print("No numeric data for plotting.")
+            
+    def prepare_data(self, target):
+        if self.data is None: return
 
-    
+        # Dropping useless columns
+        cols_to_drop = ['user_id', 'id', 'customer_id', 'last_purchase_date']
+        self.data = self.data.drop(columns=cols_to_drop, errors='ignore')
+
+        # Trimming dataset for faster testing
+        if len(self.data) > 50000:
+            print("Trimming dataset to 50k rows for testing...")
+            self.data = self.data.sample(n=100000, random_state=42)
+
+        if target not in self.data.columns:
+            print(f"Error: Column {target} not found")
+            return
+
+        print(f"\nTarget variable: {target}")
+
+        # Drop rows with missing target values
+        self.data = self.data.dropna(subset=[target])
+
+        # Split features and target
+        cols_drop = [target, 'id', 'Customer_ID']
+        X = self.data.drop(columns=[c for c in cols_drop if c in self.data.columns], errors='ignore')
+        y = self.data[target]
+
+        # Label encoder for target
+        self.encoder = LabelEncoder()
+        y = self.encoder.fit_transform(y)
+
+        # Separate numeric and categorical columns
+        num_cols = X.select_dtypes(include=['int64', 'float64']).columns
+        cat_cols = X.select_dtypes(include=['object']).columns
+
+        # Pipeline for numerics (impute missing + scaling)
+        num_pipe = Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler())
+        ])
+
+        # Pipeline for text/categorical (impute + one hot encoding)
+        cat_pipe = Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='most_frequent')),
+            ('onehot', OneHotEncoder(handle_unknown='ignore'))
+        ])
+
+        # Combine everything
+        self.preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', num_pipe, num_cols),
+                ('cat', cat_pipe, cat_cols)
+            ])
+
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
+        print("Train/test split ready.")
+
