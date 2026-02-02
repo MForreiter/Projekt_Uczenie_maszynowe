@@ -111,4 +111,43 @@ class ShopperModel:
             X, y, test_size=0.2, random_state=42, stratify=y
         )
         print("Train/test split ready.")
+        
+    def train_model(self):
+        if self.X_train is None: return
+
+        # Default model is Random Forest
+        self.model = Pipeline(steps=[
+            ('preprocessor', self.preprocessor),
+            ('classifier', RandomForestClassifier(random_state=42))
+        ])
+
+        print("\nStarting training...")
+        self.model.fit(self.X_train, self.y_train)
+        print("Base model trained.")
+
+    def tune_parameters(self):
+        # GridSearch - finding best settings
+        if self.model is None: return
+
+        print("\nRunning GridSearch (might take a while)...")
+
+        params = [
+            {
+                'classifier': [RandomForestClassifier(random_state=42)],
+                'classifier__n_estimators': [50, 150],
+                'classifier__max_depth': [10, 20]
+            },
+            {
+                # Changed solver to lbfgs to avoid multiclass errors
+                'classifier': [LogisticRegression(max_iter=1000, solver='lbfgs')],
+                'classifier__C': [0.1, 1.0]
+            }
+        ]
+
+        gs = GridSearchCV(self.model, params, cv=3, scoring='accuracy', n_jobs=-1)
+        gs.fit(self.X_train, self.y_train)
+
+        print(f"Best params: {gs.best_params_}")
+        print(f"Best score: {gs.best_score_:.4f}")
+        self.model = gs.best_estimator_
 
