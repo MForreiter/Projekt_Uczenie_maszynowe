@@ -150,4 +150,48 @@ class ShopperModel:
         print(f"Best params: {gs.best_params_}")
         print(f"Best score: {gs.best_score_:.4f}")
         self.model = gs.best_estimator_
+        
+def show_results(self):
+        if self.model is None: return
+
+        preds = self.model.predict(self.X_test)
+
+        print("\n*** Test Set Results ***")
+        print(f"Accuracy: {accuracy_score(self.y_test, preds):.4f}")
+
+        print("\nReport:")
+        print(classification_report(self.y_test, preds, target_names=self.encoder.classes_.astype(str)))
+
+        cm = confusion_matrix(self.y_test, preds)
+
+        # Confusion Matrix Plot
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                    xticklabels=self.encoder.classes_, yticklabels=self.encoder.classes_)
+        plt.title('Confusion Matrix')
+        plt.ylabel('Actual')
+        plt.xlabel('Predicted')
+        plt.show()
+
+
+# --- Main Execution ---
+if __name__ == "__main__":
+    csv_file = 'e_commerce_shopper_behaviour_and_lifestyle.csv'
+
+    # Create class instance
+    project = ShopperModel(csv_file)
+
+    # Run methods sequentially
+    # No try-except blocks, so we can see errors in console like a normal dev
+    project.load_data()
+    project.perform_eda()
+
+    # Choose target variable
+    # Options: 'premium_subscription', 'loyalty_program_member'
+    target_col = 'premium_subscription'
+
+    project.prepare_data(target_col)
+    project.train_model()
+    project.tune_parameters()
+    project.show_results()
 
