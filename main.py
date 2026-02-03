@@ -41,7 +41,7 @@ class ShopperModel:
         num_data = self.data.select_dtypes(include=[np.number])
 
         # Drop IDs as they mess up the chart
-        cols_to_ignore = ['id', 'user_id', 'Customer_ID', 'year', 'month']
+        cols_to_ignore = ['user_id', 'last_purchase_date']
         num_data = num_data.drop(columns=[c for c in cols_to_ignore if c in num_data.columns], errors='ignore')
 
         if not num_data.empty:
@@ -58,7 +58,7 @@ class ShopperModel:
         if self.data is None: return
 
         # Dropping useless columns
-        cols_to_drop = ['user_id', 'id', 'customer_id', 'last_purchase_date']
+        cols_to_drop = ['user_id', 'last_purchase_date']
         self.data = self.data.drop(columns=cols_to_drop, errors='ignore')
 
         # Trimming dataset for faster testing
@@ -75,7 +75,7 @@ class ShopperModel:
         self.data = self.data.dropna(subset=[target])
 
         # Split features and target
-        cols_drop = [target, 'id', 'Customer_ID']
+        cols_drop = [target]
         X = self.data.drop(columns=[c for c in cols_drop if c in self.data.columns], errors='ignore')
         y = self.data[target]
 
@@ -137,7 +137,6 @@ class ShopperModel:
                 'classifier__max_depth': [10, 20]
             },
             {
-                # Changed solver to lbfgs to avoid multiclass errors
                 'classifier': [LogisticRegression(max_iter=1000, solver='lbfgs')],
                 'classifier__C': [0.1, 1.0]
             }
