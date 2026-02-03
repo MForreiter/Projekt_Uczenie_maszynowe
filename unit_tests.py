@@ -39,3 +39,38 @@ class TestShopperModel(unittest.TestCase):
         self.assertIn('income_level', self.model_instance.data.columns)
         self.assertNotIn('Income Level', self.model_instance.data.columns)
 
+    def test_prepare_data_logic(self):
+        """Test if prepare_data drops 'user_id' and creates splits correctly."""
+        self.model_instance.load_data()
+        self.model_instance.prepare_data(target='premium_subscription')
+
+        # Check if X_train exists
+        self.assertIsNotNone(self.model_instance.X_train, "X_train was not created")
+
+        # Check if 'user_id' was dropped (it's in the useless_cols list)
+        self.assertNotIn('user_id', self.model_instance.X_train.columns)
+
+        # Check if target is removed from features
+        self.assertNotIn('premium_subscription', self.model_instance.X_train.columns)
+
+    def test_model_training_pipeline(self):
+        # Test if the training pipeline is constructed and fit.
+        self.model_instance.load_data()
+        self.model_instance.prepare_data(target='premium_subscription')
+        self.model_instance.train_model()
+
+        self.assertIsNotNone(self.model_instance.model, "Model object is None")
+        # Check if it has a 'predict' method (meaning it's a valid sklearn estimator)
+        self.assertTrue(hasattr(self.model_instance.model, 'predict'))
+
+    def tearDown(self):
+        """
+        Runs AFTER each test.
+        Cleans up the dummy CSV file.
+        """
+        if os.path.exists(self.test_file):
+            os.remove(self.test_file)
+
+
+if __name__ == '__main__':
+    unittest.main()
