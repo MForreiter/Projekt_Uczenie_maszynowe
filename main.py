@@ -26,7 +26,7 @@ class ShopperModel:
     def load_data(self):
         # Load csv and fix column names (replace spaces with underscores)
         self.data = pd.read_csv(self.file_name)
-        self.data.columns = self.data.columns.str.replace(' ', '_')
+        self.data.columns = self.data.columns.str.replace(' ', '_').str.lower()
         print(f"Data loaded. Rows count: {self.data.shape[0]}")
 
     def perform_eda(self):
@@ -53,7 +53,7 @@ class ShopperModel:
             plt.show()
         else:
             print("No numeric data for plotting.")
-            
+
     def prepare_data(self, target):
         if self.data is None: return
 
@@ -62,9 +62,8 @@ class ShopperModel:
         self.data = self.data.drop(columns=cols_to_drop, errors='ignore')
 
         # Trimming dataset for faster testing
-        if len(self.data) > 50000:
-            print("Trimming dataset to 50k rows for testing...")
-            self.data = self.data.sample(n=100000, random_state=42)
+        print("Trimming dataset to 100k rows for testing")
+        self.data = self.data.sample(n=100000, random_state=42)
 
         if target not in self.data.columns:
             print(f"Error: Column {target} not found")
@@ -111,7 +110,7 @@ class ShopperModel:
             X, y, test_size=0.2, random_state=42, stratify=y
         )
         print("Train/test split ready.")
-        
+
     def train_model(self):
         if self.X_train is None: return
 
@@ -121,7 +120,7 @@ class ShopperModel:
             ('classifier', RandomForestClassifier(random_state=42))
         ])
 
-        print("\nStarting training...")
+        print("\nStarting training")
         self.model.fit(self.X_train, self.y_train)
         print("Base model trained.")
 
@@ -129,7 +128,7 @@ class ShopperModel:
         # GridSearch - finding best settings
         if self.model is None: return
 
-        print("\nRunning GridSearch (might take a while)...")
+        print("\nRunning GridSearch")
 
         params = [
             {
@@ -150,8 +149,8 @@ class ShopperModel:
         print(f"Best params: {gs.best_params_}")
         print(f"Best score: {gs.best_score_:.4f}")
         self.model = gs.best_estimator_
-        
-def show_results(self):
+
+    def show_results(self):
         if self.model is None: return
 
         preds = self.model.predict(self.X_test)
@@ -187,11 +186,9 @@ if __name__ == "__main__":
     project.perform_eda()
 
     # Choose target variable
-    # Options: 'premium_subscription', 'loyalty_program_member'
     target_col = 'premium_subscription'
 
     project.prepare_data(target_col)
     project.train_model()
     project.tune_parameters()
     project.show_results()
-
